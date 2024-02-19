@@ -5,9 +5,11 @@ import './App.css';
 
 /**
  * State declaration for <App />
+ * Added 'showGraph' property
  */
 interface IState {
   data: ServerRespond[],
+  showGraph: boolean,
 }
 
 /**
@@ -20,27 +22,41 @@ class App extends Component<{}, IState> {
 
     this.state = {
       // data saves the server responds.
+      //showGraph saves the state of the graph which is set to false to set the state initially to hidden
       // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      showGraph: false,
     };
   }
 
   /**
    * Render Graph react component with state.data parse as property data
+   * If clause ensures that graph does not render until 'Start Streaming' button is pressed
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    if (this.state.showGraph) {
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
+   * The method is modified to fetch data continously instead of just getting data from it once every time a button is clicked
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    let x = 0;      
+      const interval = setInterval(() => {
+        DataStreamer.getData((serverResponds: ServerRespond[]) => {
+          this.setState({
+            data: serverResponds,
+            showGraph: true,
+          });
+        });
+        x++;
+        if (x > 1000) {
+          clearInterval(interval);
+        }
+      }, 100);
   }
 
   /**
